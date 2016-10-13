@@ -220,6 +220,7 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 		}
 		g.RemoveNode(node)
 		// XXX: need to remove the ifc from netlink manager
+		node.ReleaseInterfaceID(node.ID())
 		node.SetID(-1)
 	}	
 
