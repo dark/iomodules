@@ -150,6 +150,20 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 		Info.Printf("visit: %d :: %s\n", this.ID(), this.Path())
 		for _, t := range g.From(this) {
 			e := g.E(this, t)
+			if e.IsDeleted() {
+				g.RemoveEdge(e)
+				// find and delete reverse edge
+				e2 := g.E(t, this)
+				//if e2.Serialize()[0] == 0 {
+				//panic(fmt.Errorf("Could not find reverse edge: %d->%d", t.ID(), this.ID()))
+				//}
+				if !e2.IsDeleted() {
+					panic(fmt.Errorf("Reverse edge %d->%d is not deleted", t.ID(), this.ID()))
+				}
+				g.RemoveEdge(e2)
+				// ignore this destination
+				continue
+			}
 			adapter := this.(*canvas.AdapterNode).Adapter()
 			target := t.(canvas.Node)
 			if adapter.Type() == "bridge" {
@@ -180,9 +194,6 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 				}
 				//Debug.Printf(" %s:%d -> %s:%d\n", this.Path(), i, target.Path(), target.ID())
 			}
-			if e.IsDeleted() {
-				g.RemoveEdge(e)
-			}
 		}
 	}
 	t := canvas.NewDepthFirst(visitFn, filterInterfaceNode)
@@ -194,4 +205,22 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 		}
 		t.Walk(g, node, nil)
 	}
+
+
+	// clear interfaces with degree 0
+	for _, node := range nodes {
+		Info.Printf("Run cleanup: considering node %d\n", node.ID())
+		if node.ID() < 0 {
+			continue
+		}
+		degree := g.Degree(node)
+		Info.Printf("Run cleanup: node %d has degree %d\n", node.ID(), degree)
+		if degree != 0 {
+			continue
+		}
+		g.RemoveNode(node)
+		// XXX: need to remove the ifc from netlink manager
+		node.SetID(-1)
+	}	
+
 }
