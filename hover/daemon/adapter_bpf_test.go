@@ -363,17 +363,17 @@ func TestLinkInterfaceToOtherModule(t *testing.T) {
 	wg_.Add(1)
 	go hover.RunInNs(nets[0], func() error {
 		defer wg_.Done()
-		//TODO add ping output
+		// The arp cache contains a dirty entry, caused by
+		// some intermediate state caused all the various
+		// reconnections done above. This dirty entry would
+		// fail the ping: remove it.
 		out_, err_ := exec.Command("arp", "-d", "10.10.1.2").Output()
 		if err_ != nil {
 			t.Error(string(out_), err_)
 		}
+
 		out_, err_ = exec.Command("ping", "-c", "1", "10.10.1.2").Output()
 		if err_ != nil {
-			t.Error(string(out_), err_)
-			out_, err_ := exec.Command("ifconfig", "-a").Output()
-			t.Error(string(out_), err_)
-			out_, err_ = exec.Command("arp", "-n").Output()
 			t.Error(string(out_), err_)
 		}
 		return nil

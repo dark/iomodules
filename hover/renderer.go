@@ -157,25 +157,22 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 					panic(fmt.Errorf("Could not find forward_chain in adapter"))
 				}
 
-				key := fmt.Sprintf("%d", e.F().Ifc())
-				Info.Printf(" (r) [%4s]: TO BE REMOVED\n", key)
-
-				if err := fc.Set(key, "{ [ 0x0 0x0 0x0 0x0 ] }"); err != nil {
-					panic(err)
-				}
-				
-				g.RemoveEdge(e)
-				// find and delete reverse edge
+				// find and delete the reverse edge as well
 				e2 := g.E(t, this)
-				//if e2.Serialize()[0] == 0 {
-				//panic(fmt.Errorf("Could not find reverse edge: %d->%d", t.ID(), this.ID()))
-				//}
 				if !e2.IsDeleted() {
 					panic(fmt.Errorf("Reverse edge %d->%d is not deleted", t.ID(), this.ID()))
 				}
+
+				// clear previous entry (if any) in the ifc table
+				key := fmt.Sprintf("%d", e.F().Ifc())
+				if err := fc.Set(key, "{ [ 0x0 0x0 0x0 0x0 ] }"); err != nil {
+					panic(err)
+				}
+
+				g.RemoveEdge(e)
 				g.RemoveEdge(e2)
 
-				// ignore this destination
+				// do not perform any further processing on node 't'
 				continue
 			}
 			target := t.(canvas.Node)
@@ -220,20 +217,22 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 	}
 
 
-	// clear interfaces with degree 0
+	// reset interfaces with degree 0; these interfaces are now unreachable
 	for _, node := range nodes {
-		Info.Printf("Run cleanup: considering node %d\n", node.ID())
+		//Debug.Printf("Run cleanup: considering node %d\n", node.ID())
 		if node.ID() < 0 {
 			continue
 		}
 		degree := g.Degree(node)
-		Info.Printf("Run cleanup: node %d has degree %d\n", node.ID(), degree)
+		//Debug.Printf("Run cleanup: node %d has degree %d\n", node.ID(), degree)
 		if degree != 0 {
 			continue
 		}
 		g.RemoveNode(node)
+
+		// release and reset ID allocated for this interface
 		node.ReleaseInterfaceID(node.ID())
 		node.SetID(-1)
-	}	
+	}
 
 }

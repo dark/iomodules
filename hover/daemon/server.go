@@ -53,7 +53,6 @@ type HoverServer struct {
 	g              canvas.Graph
 	nlmon          *hover.NetlinkMonitor
 	renderer       *hover.Renderer
-	dotGeneration  int
 }
 
 type handlerFunc func(r *http.Request) routeResponse
@@ -543,8 +542,7 @@ func (s *HoverServer) recomputePolicies() {
 	if err := s.renderer.Provision(s.g, nodes); err != nil {
 		panic(err)
 	}
-	canvas.DumpDotFile(s.g, s.dotGeneration)
-	s.dotGeneration = s.dotGeneration+1
+	canvas.DumpDotFile(s.g)
 	s.nlmon.EnsureInterfaces(s.g)
 	s.renderer.Run(s.g, nodes)
 }

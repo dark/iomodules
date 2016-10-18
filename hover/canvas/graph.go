@@ -252,15 +252,13 @@ func (g *DirectedGraph) RemoveNode(node graph.Node) {
 	delete(g.paths, node.(Node).Path())
 }
 
-func DumpDotFile(g Graph, generation int) {
+func DumpDotFile(g Graph) {
 	b, err := dot.Marshal(g, "dump", "", "  ", true)
 	if err != nil {
 		Error.Println(err)
 		return
 	}
-	filename := fmt.Sprintf("/tmp/hover.%d.dot", generation)
-	Info.Printf("Dumping state in '%s'", filename)
-	err = ioutil.WriteFile(filename, b, 0644)
+	err = ioutil.WriteFile("/tmp/hover.dot", b, 0644)
 	if err != nil {
 		Error.Println(err)
 	}
