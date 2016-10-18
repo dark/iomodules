@@ -160,19 +160,6 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 				key := fmt.Sprintf("%d", e.F().Ifc())
 				Info.Printf(" (r) [%4s]: TO BE REMOVED\n", key)
 
-				yyy, zzz := fc.Get(key)
-				if zzz {
-					yyy2 := yyy.(api.ModuleTableEntry)
-					Info.Printf(" (delete-get) [%s]: [%s]\n",
-						yyy2.Key, yyy2.Value)
-				} else {
-					Info.Printf(" (delete-get) FAILED\n")
-				}
-				for xentry := range fc.Iter() {
-					Info.Printf(" (del-dump) [%s]: [%s]\n",
-						xentry.Key, xentry.Value)
-				}
-				
 				if err := fc.Set(key, "{ [ 0x0 0x0 0x0 0x0 ] }"); err != nil {
 					panic(err)
 				}

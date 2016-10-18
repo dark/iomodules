@@ -338,7 +338,7 @@ func TestLinkInterfaceToOtherModule(t *testing.T) {
 	//Create ns21, ns22
 	Info.Printf("create ns21 eth0 10.10.1.1/24\n")
 	Info.Printf("create ns22 eth0 10.10.1.2/24\n")
-	links_, nets_, cleanup2_ := testNetnsPair(t, "ns2")
+	links_, _, cleanup2_ := testNetnsPair(t, "ns2")
 	defer cleanup2_()
 
 	//POST Module2
