@@ -361,11 +361,19 @@ func TestLinkInterfaceToOtherModule(t *testing.T) {
 	//test ping between ns11<->ns22
 	var wg_ sync.WaitGroup
 	wg_.Add(1)
-	go hover.RunInNs(nets_[0], func() error {
+	go hover.RunInNs(nets[0], func() error {
 		defer wg_.Done()
 		//TODO add ping output
-		out_, err_ := exec.Command("ping", "-c", "1", "10.10.1.2").Output()
+		out_, err_ := exec.Command("arp", "-d", "10.10.1.2").Output()
 		if err_ != nil {
+			t.Error(string(out_), err_)
+		}
+		out_, err_ = exec.Command("ping", "-c", "1", "10.10.1.2").Output()
+		if err_ != nil {
+			t.Error(string(out_), err_)
+			out_, err_ := exec.Command("ifconfig", "-a").Output()
+			t.Error(string(out_), err_)
+			out_, err_ = exec.Command("arp", "-n").Output()
 			t.Error(string(out_), err_)
 		}
 		return nil

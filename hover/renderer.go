@@ -150,7 +150,33 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 		Info.Printf("visit: %d :: %s\n", this.ID(), this.Path())
 		for _, t := range g.From(this) {
 			e := g.E(this, t)
+			adapter := this.(*canvas.AdapterNode).Adapter()
 			if e.IsDeleted() {
+				fc := adapter.Table("forward_chain")
+				if fc == nil {
+					panic(fmt.Errorf("Could not find forward_chain in adapter"))
+				}
+
+				key := fmt.Sprintf("%d", e.F().Ifc())
+				Info.Printf(" (r) [%4s]: TO BE REMOVED\n", key)
+
+				yyy, zzz := fc.Get(key)
+				if zzz {
+					yyy2 := yyy.(api.ModuleTableEntry)
+					Info.Printf(" (delete-get) [%s]: [%s]\n",
+						yyy2.Key, yyy2.Value)
+				} else {
+					Info.Printf(" (delete-get) FAILED\n")
+				}
+				for xentry := range fc.Iter() {
+					Info.Printf(" (del-dump) [%s]: [%s]\n",
+						xentry.Key, xentry.Value)
+				}
+				
+				if err := fc.Set(key, "{ [ 0x0 0x0 0x0 0x0 ] }"); err != nil {
+					panic(err)
+				}
+				
 				g.RemoveEdge(e)
 				// find and delete reverse edge
 				e2 := g.E(t, this)
@@ -161,10 +187,10 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 					panic(fmt.Errorf("Reverse edge %d->%d is not deleted", t.ID(), this.ID()))
 				}
 				g.RemoveEdge(e2)
+
 				// ignore this destination
 				continue
 			}
-			adapter := this.(*canvas.AdapterNode).Adapter()
 			target := t.(canvas.Node)
 			if adapter.Type() == "bridge" {
 				if target, ok := target.(*ExtInterface); ok {
@@ -219,7 +245,6 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 			continue
 		}
 		g.RemoveNode(node)
-		// XXX: need to remove the ifc from netlink manager
 		node.ReleaseInterfaceID(node.ID())
 		node.SetID(-1)
 	}	

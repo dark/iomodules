@@ -75,6 +75,7 @@ func ensureIngressFd(link netlink.Link, fd int) error {
 			if f.ClassId == fHandle {
 				return nil
 			}
+			netlink.FilterDel(f)
 		}
 	}
 	if err := netlink.FilterAdd(filter); err != nil {
