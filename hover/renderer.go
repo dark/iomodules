@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/tools/container/intsets"
 
+	"github.com/iovisor/iomodules/hover/api"
 	"github.com/iovisor/iomodules/hover/canvas"
 	"github.com/iovisor/iomodules/hover/util"
 )
@@ -147,7 +148,9 @@ func (h *Renderer) Provision(g canvas.Graph, nodes []InterfaceNode) (err error) 
 
 func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 	visitFn := func(prev, this canvas.Node) {
-		Info.Printf("visit: %d :: %s\n", this.ID(), this.Path())
+		Info.Printf("node_visit: (%d :: %s) -> (%d :: %s)\n",
+			prev.ID(), prev.Path(),			
+			this.ID(), this.Path())
 		for _, t := range g.From(this) {
 			e := g.E(this, t)
 			adapter := this.(*canvas.AdapterNode).Adapter()
@@ -202,7 +205,7 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 						panic(err)
 					}
 					defer chain.Close()
-					Info.Printf(" %4d: %-11s%s\n", e.F().Ifc(), target.Path(), e)
+					Info.Printf(" (b) %4d: %-11s%s\n", e.F().Ifc(), target.Path(), e)
 					if err := ensureEgressFd(target.Link(), chain.FD()); err != nil {
 						panic(err)
 					}
@@ -214,9 +217,21 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 				}
 				key := fmt.Sprintf("%d", e.F().Ifc())
 				val := fmt.Sprintf("{%#x}", e.Serialize())
-				Info.Printf(" %4s: %-11s%s\n", key, target.Path(), val)
+				Info.Printf(" (c) [%4s]: %-11s[%s]\n", key, target.Path(), val)
 				if err := fc.Set(key, val); err != nil {
 					panic(err)
+				}
+				yyy, zzz := fc.Get(key)
+				if zzz {
+					yyy2 := yyy.(api.ModuleTableEntry)
+					Info.Printf(" (insert-get) [%s]: [%s]\n",
+						yyy2.Key, yyy2.Value)
+				} else {
+					Info.Printf(" (insert-get) FAILED\n")
+				}
+				for xentry := range fc.Iter() {
+					Info.Printf(" (insert-dump) [%s]: [%s]\n",
+						xentry.Key, xentry.Value)
 				}
 				//Debug.Printf(" %s:%d -> %s:%d\n", this.Path(), i, target.Path(), target.ID())
 			}
@@ -226,9 +241,13 @@ func (h *Renderer) Run(g canvas.Graph, nodes []InterfaceNode) {
 	// Find all of the Adapter (internal) nodes reachable from an external interface.
 	// Collect the ID of each node and update the modules table.
 	for _, node := range nodes {
+		Info.Printf("Run: considering %d (%d, %s)\n", node.ID(),
+			node.Link().Attrs().Index, node.Link().Attrs().Name)
 		if node.ID() < 0 {
 			continue
 		}
+		Info.Printf("Run: COMMITTING %d (%d, %s)\n", node.ID(),
+			node.Link().Attrs().Index, node.Link().Attrs().Name)
 		t.Walk(g, node, nil)
 	}
 

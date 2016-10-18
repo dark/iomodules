@@ -22,6 +22,7 @@ import (
 
 	"github.com/iovisor/iomodules/hover/bpf"
 	"github.com/iovisor/iomodules/hover/canvas"
+	"github.com/iovisor/iomodules/hover/util"
 )
 
 type InterfaceNode interface {
@@ -82,7 +83,7 @@ func NewIngressChain(chain [4]int) (*IngressChain, error) {
 		fmt.Sprintf("-DCHAIN_VALUE2=%#x", chain[2]),
 		fmt.Sprintf("-DCHAIN_VALUE3=%#x", chain[3]),
 	}
-	//Debug.Printf("netdev: %v\n", cflags)
+ 	util.Debug.Printf("netdev-ingress: %v\n", cflags)
 	bpf := bpf.NewBpfModule(bpf.NetdevRxC, cflags)
 	if bpf == nil {
 		return nil, fmt.Errorf("NewIngressChain bpf compile failed")
@@ -96,6 +97,7 @@ func NewIngressChain(chain [4]int) (*IngressChain, error) {
 	if err != nil {
 		return nil, err
 	}
+ 	util.Debug.Printf("netdev-ingress-SUCCESS: %v\n", cflags)
 	return &IngressChain{fd: fd2}, nil
 }
 
@@ -113,7 +115,7 @@ func NewEgressChain(chain [4]int) (*EgressChain, error) {
 		fmt.Sprintf("-DCHAIN_VALUE2=%#x", chain[2]),
 		fmt.Sprintf("-DCHAIN_VALUE3=%#x", chain[3]),
 	}
-	//Debug.Printf("netdev: %v\n", cflags)
+	util.Debug.Printf("netdev-egress: %v\n", cflags)
 	bpf := bpf.NewBpfModule(bpf.NetdevEgressC, cflags)
 	if bpf == nil {
 		return nil, fmt.Errorf("NewEgressChain bpf compile failed")

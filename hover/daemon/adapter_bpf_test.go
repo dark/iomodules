@@ -81,6 +81,10 @@ static int handle_rx(void *pkt, struct metadata *md) {
 `
 	moduleRedirectC = `
 static int handle_rx(void *skb, struct metadata *md) {
+	bpf_trace_printk("pkt-md:1: in %d:%d len %d\n",
+                         md->module_id, md->in_ifc, md->pktlen);
+	bpf_trace_printk("pkt-md:2: eg/flag %d %d\n",
+                         md->is_egress, md->flags);
 	if (md->in_ifc == 1){
 		bpf_trace_printk("pkt: 1 -> 2\n");
 		pkt_redirect(skb,md,2);
@@ -231,6 +235,7 @@ func TestLinkDelete(t *testing.T) {
 	links, nets, cleanup2 := testNetnsPair(t, "ns")
 	defer cleanup2()
 
+	Info.Printf("TESTDBG - loading module")
 	var t1 api.Module
 	testOne(t, testCase{
 		url:  srv.URL + "/modules/",
@@ -239,7 +244,9 @@ func TestLinkDelete(t *testing.T) {
 
 	Info.Printf("module id = %s\n", t1.Id)
 	l1 := testLinkModules(t, srv, t1.Id, "i:"+links[0].Name)
+	Info.Printf("TESTDBG - linked one")
 	l2 := testLinkModules(t, srv, t1.Id, "i:"+links[1].Name)
+	Info.Printf("TESTDBG - linked two")
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -252,16 +259,19 @@ func TestLinkDelete(t *testing.T) {
 		return nil
 	})
 	wg.Wait()
+	Info.Printf("TESTDBG - pinged one")
 
 	testOne(t, testCase{
 		url:    srv.URL + "/links/" + l1,
 		method: "DELETE",
 	}, nil)
+	Info.Printf("TESTDBG - removed one")
 
 	testOne(t, testCase{
 		url:    srv.URL + "/links/" + l2,
 		method: "DELETE",
 	}, nil)
+	Info.Printf("TESTDBG - removed two")
 }
 
 //ns11 eth0 10.10.1.1/24
@@ -357,6 +367,18 @@ func TestLinkInterfaceToOtherModule(t *testing.T) {
 	l4 := testLinkModules(t, srv, t1_.Id, "i:"+links_[1].Name)
 	Info.Printf("/links/ POST from:%s to:%s --> id:%s  OK\n", t1_.Id, "i:"+links_[1].Name, l4)
 
+	//Info.Printf("sleep 4 seconds\n");
+	//time.Sleep(4000 * time.Millisecond)
+	//Info.Printf("slept 4 seconds\n");
+
+	Info.Printf("FDs are: ns11 %d ns22 %d\n", nets[0], nets_[1]);
+
+	//Info.Printf("sleep forever\n");
+	//for {
+	//time.Sleep(4000 * time.Millisecond)
+	//}
+	//Info.Printf("slept forever\n");
+
 	//Now ns11 and ns22 should be able to ping each other accordind to their configuration
 	//test ping between ns11<->ns22
 	var wg_ sync.WaitGroup
@@ -379,20 +401,6 @@ func TestLinkInterfaceToOtherModule(t *testing.T) {
 		return nil
 	})
 	wg_.Wait()
-
-	//DELETE link3
-	testOne(t, testCase{
-		url:    srv.URL + "/links/" + l3,
-		method: "DELETE",
-	}, nil)
-	Info.Printf("/links/ DELETE link-id:%s  OK\n", l3)
-
-	//DELETE link4
-	testOne(t, testCase{
-		url:    srv.URL + "/links/" + l4,
-		method: "DELETE",
-	}, nil)
-	Info.Printf("/links/ DELETE link-id:%s  OK\n", l4)
 }
 
 type policyEntry struct {

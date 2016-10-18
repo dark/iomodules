@@ -81,20 +81,20 @@ static int pkt_drop(void *pkt, struct metadata *md);
 var NetdevRxC string = `
 BPF_TABLE("extern", int, int, modules, MAX_MODULES);
 int ingress(struct __sk_buff *skb) {
-	//bpf_trace_printk("ingress %d %x\n", skb->ifindex, CHAIN_VALUE0);
+	bpf_trace_printk("nd-ingress %d %x\n", skb->ifindex, CHAIN_VALUE0);
 	skb->cb[0] = CHAIN_VALUE0 >> 16;
 	skb->cb[1] = CHAIN_VALUE1;
 	skb->cb[2] = CHAIN_VALUE2;
 	skb->cb[3] = CHAIN_VALUE3;
 	modules.call(skb, CHAIN_VALUE0 & 0xffff);
-	//bpf_trace_printk("ingress drop\n");
+	bpf_trace_printk("nd-ingress drop\n");
 	return 2;
 }
 `
 
 var NetdevTxC string = `
 int egress(struct __sk_buff *skb) {
-	//bpf_trace_printk("egress %d\n", INTERFACE_ID);
+	bpf_trace_printk("nd-tx %d\n", INTERFACE_ID);
 	bpf_redirect(INTERFACE_ID, 0);
 	return 7;
 }
@@ -103,13 +103,13 @@ int egress(struct __sk_buff *skb) {
 var NetdevEgressC string = `
 BPF_TABLE("extern", int, int, modules, MAX_MODULES);
 int egress(struct __sk_buff *skb) {
-	//bpf_trace_printk("egress %d %x\n", skb->ifindex, CHAIN_VALUE0);
+	bpf_trace_printk("nd-egress %d %x\n", skb->ifindex, CHAIN_VALUE0);
 	skb->cb[0] = CHAIN_VALUE0 >> 16;
 	skb->cb[1] = CHAIN_VALUE1;
 	skb->cb[2] = CHAIN_VALUE2;
 	skb->cb[3] = CHAIN_VALUE3;
 	modules.call(skb, CHAIN_VALUE0 & 0xffff);
-	//bpf_trace_printk("egress drop\n");
+	bpf_trace_printk("nd-egress drop\n");
 	return 0;
 }
 `

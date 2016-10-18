@@ -222,7 +222,7 @@ func (nm *NetlinkMonitor) ensureInterface(g canvas.Graph, node InterfaceNode) er
 	if node.ID() < 0 {
 		return nil
 	}
-	Info.Printf("visit: id=%d :: fd=%d :: %s :: %d\n", node.ID(), node.FD(), node.Path(), node.Link().Attrs().Index)
+	Info.Printf("ei-visit: id=%d :: fd=%d :: %s :: %d\n", node.ID(), node.FD(), node.Path(), node.Link().Attrs().Index)
 	nm.modules.Set(strconv.Itoa(node.ID()), strconv.Itoa(node.FD()))
 	switch deg := g.Degree(node); deg {
 	case 2:

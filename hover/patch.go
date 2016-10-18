@@ -21,6 +21,7 @@ import (
 	"syscall"
 
 	"github.com/vishvananda/netlink"
+	"github.com/iovisor/iomodules/hover/util"	
 )
 
 func ensureQdisc(link netlink.Link, qdiscType string, handle, parent uint32) (netlink.Qdisc, error) {
@@ -70,6 +71,8 @@ func ensureIngressFd(link netlink.Link, fd int) error {
 	if err != nil {
 		return fmt.Errorf("failed fetching ingress filter list: %s", err)
 	}
+	util.Debug.Printf("ensureIngressFd(%s) fetched %d filters\n",
+		link.Attrs().Name, len(filters))
 	for _, f := range filters {
 		if f, ok := f.(*netlink.U32); ok {
 			if f.ClassId == fHandle {
@@ -81,7 +84,7 @@ func ensureIngressFd(link netlink.Link, fd int) error {
 	if err := netlink.FilterAdd(filter); err != nil {
 		return fmt.Errorf("failed adding ingress filter: %s", err)
 	}
-	//Debug.Printf("ensureIngressFd(%s) success\n", link.Attrs().Name)
+	util.Debug.Printf("ensureIngressFd(%s) success\n", link.Attrs().Name)
 	return nil
 }
 

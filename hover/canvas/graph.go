@@ -16,6 +16,7 @@ package canvas
 
 import (
 	"fmt"
+	"strconv"
 	"io/ioutil"
 	"math"
 
@@ -65,7 +66,8 @@ func (n *NodeBase) ID() int                      { return n.id }
 func (n *NodeBase) SetID(id int)                 { n.id = id }
 func (n *NodeBase) FD() int                      { return n.fd }
 func (n *NodeBase) SetFD(fd int)                 { n.fd = fd }
-func (n *NodeBase) DOTID() string                { return fmt.Sprintf("%q", n.Path()) }
+func (n *NodeBase) DOTID() string                { return fmt.Sprintf("%q",
+	strconv.Itoa(n.id) + "-" + n.Path()) }
 func (n *NodeBase) Path() string                 { return n.prefix + n.uuid }
 func (n *NodeBase) String() string               { return n.Path() }
 func (n *NodeBase) Groups() *intsets.Sparse      { return n.groups }

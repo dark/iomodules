@@ -510,12 +510,14 @@ func (s *HoverServer) handleLinkPost(r *http.Request) routeResponse {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		panic(err)
 	}
+	Info.Printf("Handling POST (%s)->(%s)\n", req.From, req.To)
 	from := s.lookupNode(req.From)
 	to := s.lookupNode(req.To)
 	if s.g.HasEdgeBetween(from, to) {
 		panic(fmt.Errorf("Link already exists between %q and %q", from, to))
 	}
 
+	Info.Printf("Nodes:(1) from %d to %d\n", from.ID(), to.ID())
 	if from.ID() < 0 {
 		from.SetID(s.g.NewNodeID())
 		s.g.AddNode(from)
@@ -524,11 +526,15 @@ func (s *HoverServer) handleLinkPost(r *http.Request) routeResponse {
 		to.SetID(s.g.NewNodeID())
 		s.g.AddNode(to)
 	}
+	Info.Printf("Nodes:(2) from %d to %d\n", from.ID(), to.ID())
+
 	fid, tid := -1, -1
 	e1 := canvas.NewEdgeChain(from, to, &fid, &tid)
 	s.g.SetEdge(e1)
+	Info.Printf("from->to e-chain created")
 	e2 := canvas.NewEdgeChain(to, from, &tid, &fid)
 	s.g.SetEdge(e2)
+	Info.Printf("to->from e-chain created")
 
 	s.recomputePolicies()
 	return routeResponse{body: linkEntry{
@@ -539,14 +545,22 @@ func (s *HoverServer) handleLinkPost(r *http.Request) routeResponse {
 }
 
 func (s *HoverServer) recomputePolicies() {
+	//canvas.DumpDotFile(s.g, s.dotGeneration)
+	//s.dotGeneration = s.dotGeneration+1
+
 	nodes := s.nlmon.Interfaces()
 	if err := s.renderer.Provision(s.g, nodes); err != nil {
 		panic(err)
 	}
+
 	canvas.DumpDotFile(s.g, s.dotGeneration)
 	s.dotGeneration = s.dotGeneration+1
+
 	s.nlmon.EnsureInterfaces(s.g)
 	s.renderer.Run(s.g, nodes)
+
+	canvas.DumpDotFile(s.g, s.dotGeneration)
+	s.dotGeneration = s.dotGeneration+1
 }
 
 func (s *HoverServer) edgeLookup(id string) canvas.Edge {
@@ -584,16 +598,20 @@ func (s *HoverServer) handleLinkPut(r *http.Request) routeResponse {
 }
 func (s *HoverServer) handleLinkDelete(r *http.Request) routeResponse {
 	id := getRequestVar(r, "linkId")
+	Info.Printf("DBG - Delete link %s\n", id)
 	e := s.edgeLookup(id)
 	if e == nil {
 		return notFound()
 	}
+	Info.Printf("DBG - edge resolved, from:%d to:%d\n", e.From().ID(), e.To().ID())
 	e.MarkDeleted()
 	e = s.g.Edge(e.To(), e.From()).(canvas.Edge)
 	if e != nil {
 		// remove also the reverse
 		e.MarkDeleted()
 	}
+	Info.Printf("DBG - reverse edge resolved, from:%d to:%d\n",
+		e.From().ID(), e.To().ID())
 
 	s.recomputePolicies()
 	return routeResponse{}
